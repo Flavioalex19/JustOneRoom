@@ -20,7 +20,7 @@ public class Bullet : MonoBehaviour
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        // Ignore the owner
+        // Ignora colisão com o próprio atirador
         if (owner != null && other.gameObject == owner)
             return;
 
@@ -29,8 +29,6 @@ public class Bullet : MonoBehaviour
             EnemyController enemy = other.GetComponent<EnemyController>();
             if (enemy != null)
                 enemy.TakeDamage(damage);
-
-            Destroy(gameObject);
         }
 
         else if (other.CompareTag("Player"))
@@ -38,12 +36,8 @@ public class Bullet : MonoBehaviour
             PlayerStats playerStats = other.GetComponent<PlayerStats>();
             if (playerStats != null)
                 playerStats.TakeDamage(damage);
+        }
 
-            Destroy(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        Destroy(gameObject);
     }
 }
