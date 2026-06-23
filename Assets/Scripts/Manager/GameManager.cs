@@ -12,6 +12,9 @@ public class GameManager : MonoBehaviour
     private bool waveInProgress = false;
     private float waveTimer = 0f;
 
+    [Header("Ui manager")]
+    [SerializeField] UIManager uiManager;
+
     void Awake()
     {
         if (Instance == null)
@@ -25,13 +28,16 @@ public class GameManager : MonoBehaviour
     }
     void Update()
     {
-        // Timer entre ondas
+        // Timer between waves
         if (!waveInProgress && enemiesAlive <= 0 && waveTimer > 0)
         {
+            uiManager.ActivateTimer();
+            uiManager.SetTextTimer((int)waveTimer);
             waveTimer -= Time.deltaTime;
 
             if (waveTimer <= 0)
             {
+                uiManager.DeactivateTimer();
                 StartNextWave();
             }
         }
