@@ -15,7 +15,8 @@ public class EnemyController : MonoBehaviour
 
     public float moveSpeed = 3f;
     public int damage = 10;
-
+    [Header("XP Reward")]
+    public int sendXp = 10;
     [Header("Melee Settings")]
     public float attackRange = 1.2f;
     public float attackCooldown = 1.5f;
@@ -166,11 +167,35 @@ public class EnemyController : MonoBehaviour
 
     private void Die()
     {
-        Debug.Log(gameObject.name + " died!");
-        // TODO: Add death animation, drop items, etc.
-        Destroy(gameObject);
-    }
+        // Dar XP pro player...
+        if (player != null)
+        {
+            PlayerStats playerStats = player.GetComponent<PlayerStats>();
+            if (playerStats != null)
+                playerStats.AddXP(sendXp);
+        }
 
+        // Avisar o GameManager que um inimigo foi derrotado
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.EnemyDefeated();
+        }
+
+        // Devolver para o pool
+        if (PoolManager.Instance != null)
+        {
+            PoolManager.Instance.ReturnEnemyToPool(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+    public void ResetEnemy()
+    {
+        currentHP = maxHP;
+        // Aqui você pode resetar outras coisas depois (velocidade, estado, etc)
+    }
     // Optional: visualize ranges in editor
     private void OnDrawGizmosSelected()
     {

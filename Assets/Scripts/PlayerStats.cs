@@ -5,7 +5,9 @@ public class PlayerStats : MonoBehaviour
     [Header("Health Settings")]
     [SerializeField] int maxHP = 100;              
     [SerializeField]private int currentHP = 0;
-
+    [Header("XP System")]
+    public int currentXP = 0;
+    public int xpToNextLevel = 100;
     [Header("Invulnerability")]
     public float invulnerabilityDuration = 3f;
     private bool isInvulnerable = false;
@@ -49,7 +51,29 @@ public class PlayerStats : MonoBehaviour
     }
     public int GetCurrentHP() => currentHP;
     public int GetMaxHP() => maxHP;
+    public void AddXP(int amount)
+    {
+        if (amount <= 0) return;
 
+        currentXP += amount;
+        Debug.Log("Ganhou " + amount + " XP! Total: " + currentXP);
+
+        // TODO: Verificar se subiu de nível (podemos fazer depois)
+        if (currentXP >= xpToNextLevel)
+        {
+            LevelUp();
+        }
+    }
+
+    private void LevelUp()
+    {
+        // Por enquanto só reseta o XP (depois podemos melhorar)
+        currentXP -= xpToNextLevel;
+        Debug.Log("LEVEL UP! Novo nível!");
+        // TODO: Aumentar stats do player aqui no futuro
+    }
+
+    public int GetCurrentXP() => currentXP;
     private void Die()
     {
         Debug.Log("Player has died!");
