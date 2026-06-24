@@ -79,4 +79,10 @@ public class PlayerStats : MonoBehaviour
         Debug.Log("Player has died!");
         // TODO: Add death logic later (disable movement, play animation, restart, etc.)
     }
+    public void IncreaseMaxHP(int amount)
+    {
+        maxHP += amount;
+        currentHP = maxHP; // Cura completa ao aumentar vida máxima
+        Debug.Log("Max HP aumentado para: " + maxHP);
+    }
 }

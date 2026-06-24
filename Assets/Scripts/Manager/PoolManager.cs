@@ -28,7 +28,7 @@ public class PoolManager : MonoBehaviour
     void Start()
     {
         InitializeEnemyPool();
-        SpawnInitialEnemies();
+        //SpawnInitialEnemies();
     }
 
     private void InitializeEnemyPool()
@@ -45,7 +45,7 @@ public class PoolManager : MonoBehaviour
         Debug.Log("Pool inicializado com " + enemyPool.Count + " inimigos.");
     }
 
-    private void SpawnInitialEnemies()
+    public void SpawnInitialEnemies()
     {
         int spawnCount = Mathf.Min(spawnMax, enemyPool.Count, spawnPointsParent.childCount);
         int spawned = 0;
@@ -56,25 +56,28 @@ public class PoolManager : MonoBehaviour
 
             if (enemy != null)
             {
-                Transform spawnPoint = spawnPointsParent.GetChild(i);
-                enemy.transform.position = spawnPoint.position;
-                enemy.SetActive(true);
+                // Define o tipo de inimigo de acordo com o nível
+                EnemyType enemyType = GetEnemyTypeByLevel(GameManager.Instance.currentLevel);
 
                 EnemyController enemyScript = enemy.GetComponent<EnemyController>();
                 if (enemyScript != null)
+                {
+                    enemyScript.enemyType = enemyType;
                     enemyScript.ResetEnemy();
+                }
+
+                Transform spawnPoint = spawnPointsParent.GetChild(i);
+                enemy.transform.position = spawnPoint.position;
+                enemy.SetActive(true);
 
                 spawned++;
             }
         }
 
-        // === NOVO: Registra a primeira onda no GameManager ===
         if (GameManager.Instance != null && spawned > 0)
         {
             GameManager.Instance.RegisterWaveSpawn(spawned);
         }
-
-        Debug.Log("Primeira onda spawnada com " + spawned + " inimigos.");
     }
 
 
@@ -110,7 +113,6 @@ public class PoolManager : MonoBehaviour
     public void SpawnNewWave()
     {
         int spawnCount = Mathf.Min(spawnMax, enemyPool.Count, spawnPointsParent.childCount);
-
         int spawned = 0;
 
         for (int i = 0; i < spawnCount; i++)
@@ -119,24 +121,48 @@ public class PoolManager : MonoBehaviour
 
             if (enemy != null)
             {
-                Transform spawnPoint = spawnPointsParent.GetChild(i);
-                enemy.transform.position = spawnPoint.position;
-                enemy.SetActive(true);
+                EnemyType enemyType = GetEnemyTypeByLevel(GameManager.Instance.currentLevel);
 
                 EnemyController enemyScript = enemy.GetComponent<EnemyController>();
                 if (enemyScript != null)
+                {
+                    enemyScript.enemyType = enemyType;
                     enemyScript.ResetEnemy();
+                }
+
+                Transform spawnPoint = spawnPointsParent.GetChild(i);
+                enemy.transform.position = spawnPoint.position;
+                enemy.SetActive(true);
 
                 spawned++;
             }
         }
 
-        // Avisa o GameManager quantos inimigos foram spawnados
-        if (GameManager.Instance != null)
+        if (GameManager.Instance != null && spawned > 0)
         {
             GameManager.Instance.RegisterWaveSpawn(spawned);
         }
+    }
+    private EnemyType GetEnemyTypeByLevel(int level)
+    {
+        if (level <= 2)
+        {
+            return EnemyType.Melee;                    // Só Melee
+        }
+        else if (level <= 5)
+        {
+            // Melee + Shooter (50% de chance de cada)
+            return Random.value > 0.5f ? EnemyType.Melee : EnemyType.Shooter;
+        }
+        else
+        {
+            // Melee + Shooter + Lunge
+            float rand = Random.value;
 
-        Debug.Log("Nova onda spawnada com " + spawned + " inimigos.");
+            if (rand < 0.4f) return EnemyType.Melee;
+            else if (rand < 0.75f) return EnemyType.Shooter;
+            else return EnemyType.Lunge;
+        }
     }
 }
+

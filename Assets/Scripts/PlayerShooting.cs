@@ -16,6 +16,7 @@ public class PlayerShooting : MonoBehaviour
     public int currentAmmo = 30;
     public int maxAmmo = 30;                 // CurrentMax ammo (pode aumentar durante a run)
     public int damage = 10;
+    public bool CanReload = false;
 
     [Header("Fire Rate")]
     public float fireRate = 0.25f;           // Tempo entre tiros (menor = mais r�pido)
@@ -25,8 +26,17 @@ public class PlayerShooting : MonoBehaviour
     private bool isBursting = false;
     private int burstShotsFired = 0;
 
+    [Header("Others")]
+    [SerializeField] UIManager uiManager;
+    private void Start()
+    {
+        uiManager.playerGunAmmoStats(currentAmmo);
+        uiManager.PlayerGunFireType(currentFireMode.ToString());
+    }
     void Update()
     {
+        if (!GameManager.Instance.gameHasStarted) return;
+        if (GameManager.Instance.isChoosingUpgrade) return;
         // Shooting input depending on fire mode
         if (Time.time >= nextFireTime && currentAmmo > 0)
         {
@@ -54,6 +64,11 @@ public class PlayerShooting : MonoBehaviour
         {
             HandleBurstFire();
         }
+        if(CanReload == true)
+        {
+            if (Input.GetKeyDown(KeyCode.R)) RefillAmmo();
+        }
+        
     }
 
     private void Shoot()
@@ -82,6 +97,7 @@ public class PlayerShooting : MonoBehaviour
         }
 
         currentAmmo--;
+        uiManager.playerGunAmmoStats(currentAmmo);
         nextFireTime = Time.time + fireRate;
 
         Debug.Log("Shot fired! Ammo left: " + currentAmmo);
@@ -161,4 +177,34 @@ public class PlayerShooting : MonoBehaviour
         currentAmmo = maxAmmo;
         Debug.Log("Ammo refilled!");
     }
+    public void IncreaseMaxAmmo(int amount)
+    {
+        maxAmmo += amount;
+        currentAmmo = Mathf.Min(currentAmmo + amount, maxAmmo);
+        Debug.Log("Max Ammo aumentado para: " + maxAmmo);
+    }
+
+    // Método para aumentar Fire Rate
+    public void IncreaseFireRate(float amount)
+    {
+        fireRate = Mathf.Max(0.05f, fireRate - amount); // quanto menor, mais rápido
+        Debug.Log("Fire Rate melhorado para: " + fireRate);
+    }
+
+    // Método para aumentar Dano
+    public void IncreaseDamage(int amount)
+    {
+        damage += amount;
+        Debug.Log("Damage aumentado para: " + damage);
+    }
+
+    // Método para habilitar Reload
+    public void EnableReload()
+    {
+        CanReload = true;
+        Debug.Log("Reload HABILITADO!");
+    }
+    
+
+
 }

@@ -4,6 +4,7 @@ public class PlayerMovement : MonoBehaviour
 {
     [Header("Movement Settings")]
     public float moveSpeed = 5f;
+    public float currentSpeed;
     [Header("Dash Settings")]
     [SerializeField] float dashSpeed = 15f;         
     [SerializeField] float dashDuration = 0.2f;      
@@ -26,10 +27,13 @@ public class PlayerMovement : MonoBehaviour
         //animator = GetComponent<Animator>(); // Se você for usar Animator depois
 
         rb.gravityScale = 0f;
+        currentSpeed = moveSpeed;
     }
 
     void Update()
     {
+        if (!GameManager.Instance.gameHasStarted) return;
+        if (GameManager.Instance.isChoosingUpgrade) return;
         // Input
         movement.x = Input.GetAxisRaw("Horizontal");
         movement.y = Input.GetAxisRaw("Vertical");
@@ -111,4 +115,9 @@ public class PlayerMovement : MonoBehaviour
         Debug.Log("Dash enabled: " + enabled);
     }
     #endregion
+    public void IncreaseMoveSpeed(float amount)
+    {
+        currentSpeed += amount;
+        Debug.Log("Velocidade do jogador aumentada para: " + currentSpeed);
+    }
 }

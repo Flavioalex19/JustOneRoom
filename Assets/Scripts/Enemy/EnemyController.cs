@@ -1,8 +1,10 @@
 using UnityEngine;
+using System.Collections;
 public enum EnemyType
 {
     Melee,
-    Shooter
+    Shooter,
+    Lunge
 }
 public class EnemyController : MonoBehaviour
 {
@@ -23,10 +25,20 @@ public class EnemyController : MonoBehaviour
 
     [Header("Shooter Settings")]
     public float shootRange = 8f;
-    public float minDistanceFromPlayer = 4f;   // Shooter tries to keep this distance
+    public float minDistanceFromPlayer = 4f;   
     public float fireRate = 1.2f;
-    public GameObject bulletPrefab;            // Can be the same as player or a different one
+    public GameObject bulletPrefab;            
     public float bulletSpeed = 10f;
+
+    [Header("Lunge Settings")]
+    public float lungeDetectionRange = 6f;     
+    public float lungeStopDistance = 3f;       
+    public float lungeSpeed = 18f;             
+    public float lungePrepareTime = 0.6f;      
+    public float lungeCooldown = 2.5f;
+
+    private bool isLunging = false;
+    private float lungeCooldownTimer = 0f;
 
     [Header("References")]
     public Transform player;                   // Assign the Player here (or find by tag)
@@ -52,15 +64,19 @@ public class EnemyController : MonoBehaviour
     {
         if (player == null) return;
 
-        float distanceToPlayer = Vector2.Distance(transform.position, player.position);
+        float distance = Vector2.Distance(transform.position, player.position);
 
-        if (enemyType == EnemyType.Melee)
+        if (enemyType == EnemyType.Lunge)
         {
-            MeleeBehavior(distanceToPlayer);
+            LungeBehavior(distance);
+        }
+        else if (enemyType == EnemyType.Melee)
+        {
+            MeleeBehavior(distance);
         }
         else if (enemyType == EnemyType.Shooter)
         {
-            ShooterBehavior(distanceToPlayer);
+            ShooterBehavior(distance);
         }
     }
 
@@ -204,5 +220,57 @@ public class EnemyController : MonoBehaviour
             Gizmos.DrawWireSphere(transform.position, attackRange);
         else
             Gizmos.DrawWireSphere(transform.position, shootRange);
+    }
+    private void LungeBehavior(float distance)
+    {
+        if (lungeCooldownTimer > 0)
+            lungeCooldownTimer -= Time.fixedDeltaTime;
+
+        if (isLunging) return;
+
+        if (distance > lungeStopDistance && distance < lungeDetectionRange)
+        {
+            // Anda até a distância de ataque
+            Vector2 dir = (player.position - transform.position).normalized;
+            rb.MovePosition(rb.position + dir * moveSpeed * Time.fixedDeltaTime);
+        }
+        else if (distance <= lungeStopDistance && lungeCooldownTimer <= 0)
+        {
+            // Para e prepara o dash
+            StartCoroutine(PerformLunge());
+        }
+    }
+
+    private IEnumerator PerformLunge()
+    {
+        isLunging = true;
+
+        // Olha para o player
+        Vector2 direction = (player.position - transform.position).normalized;
+
+        // Tempo de preparação (pode adicionar animação aqui depois)
+        yield return new WaitForSeconds(lungePrepareTime);
+
+        // Dá o dash
+        float dashDuration = 0.25f;
+        float timer = 0f;
+
+        while (timer < dashDuration)
+        {
+            rb.MovePosition(rb.position + direction * lungeSpeed * Time.fixedDeltaTime);
+            timer += Time.fixedDeltaTime;
+            yield return null;
+        }
+
+        // Causa dano se estiver perto do player após o dash
+        if (Vector2.Distance(transform.position, player.position) < 2f)
+        {
+            PlayerStats playerStats = player.GetComponent<PlayerStats>();
+            if (playerStats != null)
+                playerStats.TakeDamage(damage);
+        }
+
+        lungeCooldownTimer = lungeCooldown;
+        isLunging = false;
     }
 }

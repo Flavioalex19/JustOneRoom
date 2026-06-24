@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
@@ -11,6 +12,14 @@ public class GameManager : MonoBehaviour
 
     private bool waveInProgress = false;
     private float waveTimer = 0f;
+    private bool isGamePaused = false;
+    [Header("Upgrade Selection")]
+    public bool isChoosingUpgrade = false;
+    [Header("Game Start")]
+    public bool gameHasStarted = false;
+    [Header("Intro / Title Screen")]
+    public bool isIntroActive = true;           
+    public GameObject introPanel;
 
     [Header("Ui manager")]
     [SerializeField] UIManager uiManager;
@@ -22,40 +31,68 @@ public class GameManager : MonoBehaviour
         else
             Destroy(gameObject);
     }
-    private void Start()
+
+    void Start()
     {
-        
+        if (uiManager != null)
+            uiManager.SetWaveText(currentLevel);
     }
+
     void Update()
     {
-        // Timer between waves
-        if (!waveInProgress && enemiesAlive <= 0 && waveTimer > 0)
+        HandleGameStartInput();
+
+        // Timer entre ondas (só funciona depois que o jogo começou)
+        if (gameHasStarted && !waveInProgress && enemiesAlive <= 0 && waveTimer > 0 && !isGamePaused)
         {
-            uiManager.ActivateTimer();
-            uiManager.SetTextTimer((int)waveTimer);
+            if (uiManager != null)
+            {
+                uiManager.ActivateTimer();
+                uiManager.SetTextTimer(Mathf.CeilToInt(waveTimer));
+            }
+
             waveTimer -= Time.deltaTime;
 
             if (waveTimer <= 0)
             {
-                uiManager.DeactivateTimer();
+                if (uiManager != null) uiManager.DeactivateTimer();
                 StartNextWave();
             }
         }
     }
 
-    /// <summary>
-    /// Chamado pelo PoolManager quando spawna os inimigos da onda
-    /// </summary>
+    private void HandleGameStartInput()
+    {
+        if (!gameHasStarted && Input.GetKeyDown(KeyCode.Space))
+        {
+            StartGame();
+        }
+    }
+
+    public void StartGame()
+    {
+        gameHasStarted = true;
+        isIntroActive = false;
+
+        if (introPanel != null)
+            introPanel.SetActive(false);
+
+        Debug.Log("Jogo iniciado!");
+
+        // Spawna a primeira onda
+        if (PoolManager.Instance != null)
+        {
+            PoolManager.Instance.SpawnInitialEnemies();
+        }
+    }
+
     public void RegisterWaveSpawn(int amount)
     {
         enemiesAlive = amount;
         waveInProgress = true;
-        Debug.Log("Onda " + currentLevel + " iniciada com " + enemiesAlive + " inimigos.");
+        Debug.Log($"Onda {currentLevel} iniciada com {enemiesAlive} inimigos.");
     }
 
-    /// <summary>
-    /// Chamado quando um inimigo é derrotado
-    /// </summary>
     public void EnemyDefeated()
     {
         enemiesAlive--;
@@ -69,27 +106,40 @@ public class GameManager : MonoBehaviour
 
     private void WaveCompleted()
     {
-        Debug.Log("Onda " + currentLevel + " completada!");
+        Debug.Log($"Onda {currentLevel} completada!");
 
-        // Aumenta a quantidade de inimigos da próxima onda
         if (PoolManager.Instance != null)
-        {
-            PoolManager.Instance.IncreaseSpawnMax(2); // Aumenta 2 por onda (você pode mudar)
-        }
+            PoolManager.Instance.IncreaseSpawnMax(2);
 
         currentLevel++;
-        waveTimer = timeBetweenWaves;
 
-        Debug.Log("Próxima onda começa em " + timeBetweenWaves + " segundos...");
+        isChoosingUpgrade = true;                    
+        isGamePaused = true;
+
+        if (uiManager != null)
+            uiManager.ShowUpgradeScreen();
+    }
+
+    public void StartWaveTimer()
+    {
+        waveTimer = timeBetweenWaves;
+        isGamePaused = false;
+        isChoosingUpgrade = false;                   
+
+        if (uiManager != null)
+            uiManager.ActivateTimer();
     }
 
     private void StartNextWave()
     {
-        Debug.Log("Iniciando Onda " + currentLevel);
+        Debug.Log($"Iniciando Onda {currentLevel}");
+
+        // Recarrega munição do player
+        PlayerShooting playerShooting = FindFirstObjectByType<PlayerShooting>();
+        if (playerShooting != null)
+            playerShooting.RefillAmmo();
 
         if (PoolManager.Instance != null)
-        {
-            PoolManager.Instance.SpawnNewWave(); // Vamos criar esse método no PoolManager
-        }
+            PoolManager.Instance.SpawnNewWave();
     }
 }
